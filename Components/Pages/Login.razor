@@ -1,0 +1,62 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Login</PageTitle>
+
+<h3>Login</h3>
+
+<p>Enter your username to log in with your passkey:</p>
+
+<div>
+  <InputText required @bind-Value="username" placeholder="Enter username" />
+  <button @onclick="StartLogin">Login</button>
+</div>
+
+<p>@statusMessage</p>
+
+@code {
+  private string username = string.Empty;
+  private string statusMessage = string.Empty;
+
+  private async Task StartLogin()
+  {
+    try
+    {
+      // Validate username input
+      if (string.IsNullOrWhiteSpace(username))
+      {
+        statusMessage = "Username is required.";
+        return;
+      }
+
+      statusMessage = "Starting login...";
+
+      // Start login
+      var options = await AuthService.StartLoginAsync(username);
+
+      // Call WebAuthn API to get an assertion
+      var assertion = await JSRuntime.InvokeAsync<object>("getAssertion", options);
+
+      // Verify the assertion
+      var isSuccess = await AuthService.VerifyLoginAsync(assertion);
+
+      statusMessage = isSuccess ? "Login successful!" : "Login failed.";
+
+      if (isSuccess)
+      {
+        ((AuthStateProvider)AuthenticationStateProvider).AuthenticateUser(username);
+        NavigationManager.NavigateTo("/");
+        return;
+      }
+
+    }
+    catch (Exception ex)
+    {
+      statusMessage = $"Error: {ex.Message}";
+    }
+  }
+}

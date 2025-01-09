@@ -1,0 +1,52 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Registration</PageTitle>
+
+<h3>Register</h3>
+
+<p>Enter a username to register a passkey:</p>
+
+<div>
+  <InputText required @bind-Value="username" placeholder="Enter username" />
+  <button @onclick="StartRegistration">Register</button>
+</div>
+
+<p>@statusMessage</p>
+
+@code {
+  private string username = string.Empty;
+  private string statusMessage = string.Empty;
+
+  private async Task StartRegistration()
+  {
+    try
+    {
+      // Validate username input
+      if (string.IsNullOrWhiteSpace(username))
+      {
+        statusMessage = "Username is required.";
+        return;
+      }
+
+      statusMessage = "Starting registration...";
+
+      // Start registration
+      var options = await AuthService.StartRegistrationAsync(username);
+
+      // Call WebAuthn API to create a credential
+      var credential = await JSRuntime.InvokeAsync<object>("createCredential", options);
+
+      // Verify the credential
+      var isSuccess = await AuthService.VerifyRegistrationAsync(credential);
+
+      statusMessage = isSuccess ? "Registration successful!" : "Registration failed.";
+    }
+    catch (Exception ex)
+    {
+      statusMessage = $"Error: {ex.Message}";
+    }
+  }
+}
