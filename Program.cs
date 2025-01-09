@@ -40,19 +40,15 @@ namespace BlazorApp
       // Config FIDO2 Service
       var fido2Config = builder.Configuration.GetSection("Fido2");
       var fido2ServerDomain = fido2Config["ServerDomain"];
-      var fido2Origins = fido2Config["Origins"]?.Split(';', StringSplitOptions.RemoveEmptyEntries);
+      var fido2Origins = fido2Config["Origins"]?
+        .Split(';', StringSplitOptions.RemoveEmptyEntries);
       if (fido2ServerDomain == null || fido2Origins == null) throw new ApplicationException("Invalid configuration for FIDO2 service.");
       builder.Services.AddSingleton(sp => new Fido2Service(fido2ServerDomain, fido2Origins));
 
       // Add communication with the backend for registration and login
       builder.Services.AddScoped<AuthService>(sp =>
       {
-        //FORTESTING: Trust all certificates
-        var handler = new HttpClientHandler
-        {
-          ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true
-        };
-        var httpClient = new HttpClient(handler)
+        var httpClient = new HttpClient()
         {
           BaseAddress = new Uri(fido2Origins[0]) // Use the first origin as the base address
         };
@@ -60,13 +56,11 @@ namespace BlazorApp
       });
 
       builder.Logging.ClearProviders();
-      builder.Logging.AddConsole(); // Add console logging for better diagnostics
+      builder.Logging.AddConsole();
 
+      // Enable detailed error reporting
       builder.Services.AddServerSideBlazor()
-        .AddCircuitOptions(options =>
-        {
-          options.DetailedErrors = true; // Enable detailed error reporting
-        });
+        .AddCircuitOptions(options => options.DetailedErrors = true);
 
       var app = builder.Build();
 

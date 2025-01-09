@@ -44,11 +44,7 @@ namespace BlazorApp.Controllers
       var options = _fido2.RequestNewCredential(
           user: userAccount,
           excludeCredentials: existingKeys,
-          authenticatorSelection: new AuthenticatorSelection
-          {
-            RequireResidentKey = false,
-            UserVerification = UserVerificationRequirement.Discouraged
-          },
+          authenticatorSelection: AuthenticatorSelection.Default,
           attestationPreference: AttestationConveyancePreference.None
       );
 
@@ -64,30 +60,30 @@ namespace BlazorApp.Controllers
     [HttpPost("register/verify")]
     public async Task<IActionResult> VerifyRegistration([FromBody] AuthenticatorAttestationRawResponse attestationResponse)
     {
-      // 1. Retrieve and remove stored options from session
-      var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
-      if (string.IsNullOrEmpty(jsonOptions))
-      {
-        return BadRequest("Attestation options not found in session.");
-      }
-
-      Console.WriteLine(jsonOptions);
-
-      HttpContext.Session.Remove("fido2.attestationOptions");
-      var options = CredentialCreateOptions.FromJson(jsonOptions);
-
-      // 2. Define callback to check if the credential ID is unique to the user
-      Task<bool> callback(IsCredentialIdUniqueToUserParams args, CancellationToken cancellationToken)
-      {
-        var existingCredentials = _dbContext.Passkeys
-          .Where(p => p.CredentialId == Convert.ToBase64String(args.CredentialId))
-          .ToList();
-
-        return Task.FromResult(existingCredentials.Count == 0);
-      }
-
       try
       {
+        // 1. Retrieve and remove stored options from session
+        var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
+        if (string.IsNullOrEmpty(jsonOptions))
+        {
+          return BadRequest("Attestation options not found in session.");
+        }
+
+        Console.WriteLine(jsonOptions);
+
+        HttpContext.Session.Remove("fido2.attestationOptions");
+        var options = CredentialCreateOptions.FromJson(jsonOptions);
+
+        // 2. Define callback to check if the credential ID is unique to the user
+        Task<bool> callback(IsCredentialIdUniqueToUserParams args, CancellationToken cancellationToken)
+        {
+          var existingCredentials = _dbContext.Passkeys
+            .Where(p => p.CredentialId == Convert.ToBase64String(args.CredentialId))
+            .ToList();
+
+          return Task.FromResult(existingCredentials.Count == 0);
+        }
+
         // 3. Verify the attestation response and create the new credential
         var success = await _fido2.MakeNewCredentialAsync(attestationResponse, options, callback);
 
@@ -109,7 +105,7 @@ namespace BlazorApp.Controllers
       }
       catch (Exception ex)
       {
-        return BadRequest(new { message = ex.Message });
+        return BadRequest(ex.Message);
       }
     }
 
@@ -145,43 +141,43 @@ namespace BlazorApp.Controllers
     [HttpPost("login/verify")]
     public async Task<IActionResult> VerifyLogin([FromBody] AuthenticatorAssertionRawResponse clientResponse)
     {
-      // 1. Retrieve and remove stored assertion options
-      var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
-      if (string.IsNullOrEmpty(jsonOptions))
-      {
-        return BadRequest("Assertion options not found in session.");
-      }
-
-      HttpContext.Session.Remove("fido2.assertionOptions");
-      var options = AssertionOptions.FromJson(jsonOptions);
-
-      // 2. Get registered credential from the database
-      var credentialId = Convert.ToBase64String(clientResponse.Id);
-      var storedCredential = _dbContext.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
-
-      if (storedCredential == null)
-      {
-        return BadRequest("Credential not found.");
-      }
-
-      var storedPublicKey = Convert.FromBase64String(storedCredential.PublicKey);
-
-      // 3. Get the stored counter
-      var storedCounter = storedCredential.Counter;
-
-      // 4. Create callback to check if user handle owns the credential ID
-      Task<bool> callback(IsUserHandleOwnerOfCredentialIdParams args, CancellationToken cancellationToken)
-      {
-        var userHandle = Convert.ToBase64String(args.UserHandle);
-        var matchingCredentials = _dbContext.Passkeys
-          .Where(p => p.UserHandle == userHandle)
-          .ToList();
-
-        return Task.FromResult(matchingCredentials.Any(c => c.CredentialId == Convert.ToBase64String(args.CredentialId)));
-      }
-
       try
       {
+        // 1. Retrieve and remove stored assertion options
+        var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
+        if (string.IsNullOrEmpty(jsonOptions))
+        {
+          return BadRequest("Assertion options not found in session.");
+        }
+
+        HttpContext.Session.Remove("fido2.assertionOptions");
+        var options = AssertionOptions.FromJson(jsonOptions);
+
+        // 2. Get registered credential from the database
+        var credentialId = Convert.ToBase64String(clientResponse.Id);
+        var storedCredential = _dbContext.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
+
+        if (storedCredential == null)
+        {
+          return BadRequest("Credential not found.");
+        }
+
+        var storedPublicKey = Convert.FromBase64String(storedCredential.PublicKey);
+
+        // 3. Get the stored counter
+        var storedCounter = storedCredential.Counter;
+
+        // 4. Create callback to check if user handle owns the credential ID
+        Task<bool> callback(IsUserHandleOwnerOfCredentialIdParams args, CancellationToken cancellationToken)
+        {
+          var userHandle = Convert.ToBase64String(args.UserHandle);
+          var matchingCredentials = _dbContext.Passkeys
+            .Where(p => p.UserHandle == userHandle)
+            .ToList();
+
+          return Task.FromResult(matchingCredentials.Any(c => c.CredentialId == Convert.ToBase64String(args.CredentialId)));
+        }
+
         // 5. Verify the assertion
         var result = await _fido2.MakeAssertionAsync(clientResponse, options, storedPublicKey, storedCounter, callback);
 
@@ -194,7 +190,7 @@ namespace BlazorApp.Controllers
       }
       catch (Exception ex)
       {
-        return BadRequest(new { message = ex.Message });
+        return BadRequest(ex.Message);
       }
     }
   }

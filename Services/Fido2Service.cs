@@ -12,7 +12,8 @@ namespace BlazorApp.Services
       {
         ServerName = "BlazorApp",
         ServerDomain = serverDomain,
-        Origins = new HashSet<string>(origins)
+        Origins = new HashSet<string>(origins),
+        TimestampDriftTolerance = 1000
       });
     }
 

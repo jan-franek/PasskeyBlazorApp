@@ -11,7 +11,7 @@
 
 <div>
   <InputText required @bind-Value="username" placeholder="Enter username" />
-  <button @onclick="StartRegistration">Register</button>
+  <button disabled="@(!RegisterFormValid())" @onclick="StartRegistration">Register</button>
 </div>
 
 <p>@statusMessage</p>
@@ -19,6 +19,8 @@
 @code {
   private string username = string.Empty;
   private string statusMessage = string.Empty;
+
+  private bool RegisterFormValid() => !string.IsNullOrWhiteSpace(username);
 
   private async Task StartRegistration()
   {
@@ -40,9 +42,9 @@
       var credential = await JSRuntime.InvokeAsync<object>("createCredential", options);
 
       // Verify the credential
-      var isSuccess = await AuthService.VerifyRegistrationAsync(credential);
+      var response = await AuthService.VerifyRegistrationAsync(credential);
 
-      statusMessage = isSuccess ? "Registration successful!" : "Registration failed.";
+      statusMessage = response.IsSuccessStatusCode ? "Registration successful!" : $"Registration failed: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync().Result}]";
     }
     catch (Exception ex)
     {

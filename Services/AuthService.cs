@@ -9,7 +9,7 @@
       var response = await _httpClient.PostAsJsonAsync("/api/auth/register", username);
       if (!response.IsSuccessStatusCode)
       {
-        throw new ApplicationException($"Error starting registration: {response.ReasonPhrase}");
+        throw new ApplicationException($"Error starting registration: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync()}]");
       }
 
       var options = await response.Content.ReadFromJsonAsync<object>();
@@ -21,15 +21,9 @@
       return options;
     }
 
-    public async Task<bool> VerifyRegistrationAsync(object credential)
+    public async Task<HttpResponseMessage> VerifyRegistrationAsync(object credential)
     {
-      var response = await _httpClient.PostAsJsonAsync("/api/auth/register/verify", credential);
-      if (!response.IsSuccessStatusCode)
-      {
-        Console.WriteLine(response.ReasonPhrase);
-      }
-
-      return response.IsSuccessStatusCode;
+      return await _httpClient.PostAsJsonAsync("/api/auth/register/verify", credential);
     }
 
     public async Task<object> StartLoginAsync(string username)
@@ -37,7 +31,7 @@
       var response = await _httpClient.PostAsJsonAsync("/api/auth/login", username);
       if (!response.IsSuccessStatusCode)
       {
-        throw new ApplicationException($"Error starting login: {response.ReasonPhrase}");
+        throw new ApplicationException($"Error starting login: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync()}]");
       }
 
       var options = await response.Content.ReadFromJsonAsync<object>();
@@ -49,10 +43,15 @@
       return options;
     }
 
-    public async Task<bool> VerifyLoginAsync(object assertion)
+    public async Task<HttpResponseMessage> VerifyLoginAsync(object assertion)
     {
       var response = await _httpClient.PostAsJsonAsync("/api/auth/login/verify", assertion);
-      return response.IsSuccessStatusCode;
+      if (response == null)
+      {
+        throw new ApplicationException("Invalid response from the server during login");
+      }
+
+      return response;
     }
   }
 }

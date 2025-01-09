@@ -13,7 +13,7 @@
 
 <div>
   <InputText required @bind-Value="username" placeholder="Enter username" />
-  <button @onclick="StartLogin">Login</button>
+  <button disabled="@(!LoginFormValid())" @onclick="StartLogin">Login</button>
 </div>
 
 <p>@statusMessage</p>
@@ -21,6 +21,8 @@
 @code {
   private string username = string.Empty;
   private string statusMessage = string.Empty;
+
+  private bool LoginFormValid() => !string.IsNullOrWhiteSpace(username);
 
   private async Task StartLogin()
   {
@@ -42,17 +44,16 @@
       var assertion = await JSRuntime.InvokeAsync<object>("getAssertion", options);
 
       // Verify the assertion
-      var isSuccess = await AuthService.VerifyLoginAsync(assertion);
+      var response = await AuthService.VerifyLoginAsync(assertion);
 
-      statusMessage = isSuccess ? "Login successful!" : "Login failed.";
+      statusMessage = response.IsSuccessStatusCode ? "Login successful!" : $"Login failed: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync().Result}]";
 
-      if (isSuccess)
+      if (response.IsSuccessStatusCode)
       {
         ((AuthStateProvider)AuthenticationStateProvider).AuthenticateUser(username);
         NavigationManager.NavigateTo("/");
         return;
       }
-
     }
     catch (Exception ex)
     {
