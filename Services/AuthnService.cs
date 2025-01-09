@@ -1,10 +1,12 @@
-﻿namespace BlazorApp.Services
+﻿using Fido2NetLib;
+
+namespace BlazorApp.Services
 {
-  public class AuthService(HttpClient httpClient)
+  public class AuthnService(HttpClient httpClient)
   {
     private readonly HttpClient _httpClient = httpClient;
 
-    public async Task<object> StartRegistrationAsync(string username)
+    public async Task<CredentialCreateOptions> StartRegistrationAsync(string username)
     {
       var response = await _httpClient.PostAsJsonAsync("/api/auth/register", username);
       if (!response.IsSuccessStatusCode)
@@ -12,7 +14,7 @@
         throw new ApplicationException($"Error starting registration: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync()}]");
       }
 
-      var options = await response.Content.ReadFromJsonAsync<object>();
+      var options = await response.Content.ReadFromJsonAsync<CredentialCreateOptions>();
       if (options == null)
       {
         throw new ApplicationException("Invalid response from the server during registration");
@@ -21,12 +23,12 @@
       return options;
     }
 
-    public async Task<HttpResponseMessage> VerifyRegistrationAsync(object credential)
+    public async Task<HttpResponseMessage> VerifyRegistrationAsync(AuthenticatorAttestationRawResponse credential)
     {
       return await _httpClient.PostAsJsonAsync("/api/auth/register/verify", credential);
     }
 
-    public async Task<object> StartLoginAsync(string username)
+    public async Task<AssertionOptions> StartLoginAsync(string username)
     {
       var response = await _httpClient.PostAsJsonAsync("/api/auth/login", username);
       if (!response.IsSuccessStatusCode)
@@ -34,7 +36,7 @@
         throw new ApplicationException($"Error starting login: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync()}]");
       }
 
-      var options = await response.Content.ReadFromJsonAsync<object>();
+      var options = await response.Content.ReadFromJsonAsync<AssertionOptions>();
       if (options == null)
       {
         throw new ApplicationException("Invalid response from the server during login");
@@ -43,7 +45,7 @@
       return options;
     }
 
-    public async Task<HttpResponseMessage> VerifyLoginAsync(object assertion)
+    public async Task<HttpResponseMessage> VerifyLoginAsync(AuthenticatorAssertionRawResponse assertion)
     {
       var response = await _httpClient.PostAsJsonAsync("/api/auth/login/verify", assertion);
       if (response == null)
@@ -52,6 +54,24 @@
       }
 
       return response;
+    }
+  }
+
+  public static class AuthnServiceDependencyInjection
+  {
+    /// <summary>
+    /// Adds the <see cref="AuthnService"/> service to the DI container.
+    /// </summary>
+    public static IServiceCollection AddAuthn(this IServiceCollection services, Uri apiUri)
+    {
+      return services.AddScoped(sp =>
+      {
+        var httpClient = new HttpClient()
+        {
+          BaseAddress = apiUri
+        };
+        return new AuthnService(httpClient);
+      });
     }
   }
 }

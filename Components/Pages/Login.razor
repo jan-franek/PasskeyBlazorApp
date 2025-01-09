@@ -1,11 +1,19 @@
 ﻿@page "/login"
 @rendermode InteractiveServer
-@inject AuthService AuthService
+@inject AuthnService AuthService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject WebAuthnService WebAuthService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Login</PageTitle>
+
+@if (!WebAuthnSupported)
+{
+  <div class="alert alert-danger">
+    Please note: Your browser does not seem to support WebAuthn yet. <a href="https://caniuse.com/#search=webauthn" target="_blank">Supported browsers</a>
+  </div>
+}
 
 <h3>Login</h3>
 
@@ -21,6 +29,17 @@
 @code {
   private string username = string.Empty;
   private string statusMessage = string.Empty;
+  private bool WebAuthnSupported;
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      await WebAuthService.Init();
+      WebAuthnSupported = await WebAuthService.IsWebAuthnSupportedAsync();
+      StateHasChanged(); // Trigger re-render to update UI
+    }
+  }
 
   private bool LoginFormValid() => !string.IsNullOrWhiteSpace(username);
 
@@ -28,20 +47,13 @@
   {
     try
     {
-      // Validate username input
-      if (string.IsNullOrWhiteSpace(username))
-      {
-        statusMessage = "Username is required.";
-        return;
-      }
-
       statusMessage = "Starting login...";
 
       // Start login
       var options = await AuthService.StartLoginAsync(username);
 
       // Call WebAuthn API to get an assertion
-      var assertion = await JSRuntime.InvokeAsync<object>("getAssertion", options);
+      var assertion = await WebAuthService.GetAssertionAsync(options);
 
       // Verify the assertion
       var response = await AuthService.VerifyLoginAsync(assertion);

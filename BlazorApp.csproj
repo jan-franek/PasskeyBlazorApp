@@ -10,7 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Services\WebAuthnService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Fido2" Version="3.0.1" />
+    <PackageReference Include="Fido2.AspNet" Version="3.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
