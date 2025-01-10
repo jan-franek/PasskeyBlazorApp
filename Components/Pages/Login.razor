@@ -58,7 +58,7 @@
       // Verify the assertion
       var response = await AuthService.VerifyLoginAsync(assertion);
 
-      statusMessage = response.IsSuccessStatusCode ? "Login successful!" : $"Login failed: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync().Result}]";
+      statusMessage = response.IsSuccessStatusCode ? "Login successful!" : $"Login failed: {response.ReasonPhrase} [{await response.Content.ReadAsStringAsync()}]";
 
       if (response.IsSuccessStatusCode)
       {

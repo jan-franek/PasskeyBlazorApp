@@ -56,7 +56,7 @@
       // Verify the credential
       var response = await AuthService.VerifyRegistrationAsync(credential);
 
-      statusMessage = response.IsSuccessStatusCode ? "Registration successful!" : $"Registration failed: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync().Result}]";
+      statusMessage = response.IsSuccessStatusCode ? "Registration successful!" : $"Registration failed: {response.ReasonPhrase} [{await response.Content.ReadAsStringAsync()}]";
     }
     catch (Exception ex)
     {

@@ -116,7 +116,7 @@ namespace BlazorApp.Controllers
       var user = _dbContext.Users.FirstOrDefault(u => u.Username == username);
       if (user == null)
       {
-        return NotFound(new { message = "Username was not registered" });
+        return NotFound("Username is not registered");
       }
 
       // 2. Get registered credentials for the user

@@ -11,7 +11,7 @@ namespace BlazorApp.Services
       var response = await _httpClient.PostAsJsonAsync("/api/auth/register", username);
       if (!response.IsSuccessStatusCode)
       {
-        throw new ApplicationException($"Error starting registration: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync()}]");
+        throw new ApplicationException($"Error starting registration: {response.ReasonPhrase} [{await response.Content.ReadAsStringAsync()}]");
       }
 
       var options = await response.Content.ReadFromJsonAsync<CredentialCreateOptions>();
@@ -33,7 +33,7 @@ namespace BlazorApp.Services
       var response = await _httpClient.PostAsJsonAsync("/api/auth/login", username);
       if (!response.IsSuccessStatusCode)
       {
-        throw new ApplicationException($"Error starting login: {response.ReasonPhrase} [{response.Content.ReadAsStringAsync()}]");
+        throw new ApplicationException($"Error starting login: {response.ReasonPhrase} [{await response.Content.ReadAsStringAsync()}]");
       }
 
       var options = await response.Content.ReadFromJsonAsync<AssertionOptions>();
