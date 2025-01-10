@@ -39,6 +39,9 @@ Ensure you have the following installed:
 - [.NET SDK 9.0 or later](https://dotnet.microsoft.com/download)
 - [Nginx](https://www.nginx.com/) (for deployment)
 
+The project has been tested with most of the conventional web browsers, including Chrome, Firefox, Edge and LibeWolf
+ and with many authenticators, including Bitwarden browser extension, Windows Hello, Google Password Manager.
+
 ---
 
 ## **Installation**

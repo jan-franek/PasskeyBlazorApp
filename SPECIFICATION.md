@@ -56,18 +56,23 @@ Aplikaci v běhu můžete vidět [zde](https://franekj.bridge.cz/).
 Proces registrace slouží k vytvoření nového passkey. Postup je následující:
 
 1. Uživatel zadá své uživatelské jméno - [Register.razor](Components\Pages\Register.razor).
-2. Server vygeneruje "challenge" a další potřebná data a vrátí je klientovi - [AuthController.cs](Controllers\AuthController.cs).
-3. Klient použije **WebAuthn API**, které požádá uživatele o vytvoření nového passkey na jeho zařízení - [WebAuthnService.cs](Services\WebAuthnService.cs) + [webauthn.js](wwwroot\js\webauthn.js).
-4. Passkey (ve formě veřejného klíče) je uložen na serveru spolu s identifikátorem uživatele - [AuthController.cs](Controllers\AuthController.cs).
+2. Uživatel stiskne tlačítko `Registrovat`, které odešle požadavek na server.
+3. Server vygeneruje `challenge` (`assertionOptions`) a vrátí je klientovi - [AuthController.cs](Controllers\AuthController.cs).
+4. Klient použije **WebAuthn API** k zavolání autentifikačního zařízení, které požádá uživatele o vytvoření nového passkey na jeho zařízení - [WebAuthnService.cs](Services\WebAuthnService.cs) + [webauthn.js](wwwroot\js\webauthn.js).
+5. Klient odešle odpověď na server, který validuje nový passkey a uloží ho do databáze - [AuthController.cs](Controllers\AuthController.cs).
+6. Server vrátí odpověď klientovi a uživatel je úspěšně zaregistrován.
 
 ### **4.2 Přihlášení**
 
 Proces přihlášení ověřuje identitu uživatele:
 
 1. Uživatel zadá své uživatelské jméno - [Login.razor](Components\Pages\Login.razor).
-2. Server vygeneruje "challenge" a odešle ji klientovi - [AuthController.cs](Controllers\AuthController.cs).
-3. Klient použije **WebAuthn API** pro ověření passkey - [WebAuthnService.cs](Services\WebAuthnService.cs) + [webauthn.js](wwwroot\js\webauthn.js).
-4. Server validuje odpověď klienta a autentizuje uživatele - [AuthController.cs](Controllers\AuthController.cs).
+2. Uživatel stiskne tlačítko `Přihlásit`, které odešle požadavek na server.
+3. Server vygeneruje `challenge` (`assertionOptions`) a vrátí ji klientovi - [AuthController.cs](Controllers\AuthController.cs).
+4. Klient použije **WebAuthn API** k zavolání autentifikačního zařízení, které požádá uživatele o ověření jeho passkey - [WebAuthnService.cs](Services\WebAuthnService.cs) + [webauthn.js](wwwroot\js\webauthn.js).
+5. Klient odešle odpověď na server, který validuje odpověď klienta a autentizuje uživatele - [AuthController.cs](Controllers\AuthController.cs).
+6. Server validuje odpověď klienta a autentizuje uživatele - [AuthController.cs](Controllers\AuthController.cs).
+7. Klient po úspěšném ověření přesměruje uživatele na domovskou stránku.
 
 ### **4.3 Odhlášení**
 
